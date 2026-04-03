@@ -10,6 +10,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import check_db_connection
 from dotenv import load_dotenv
 
+# Import route routers
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from routes.analyze_routes import router as analyze_router
+
 # Load environment variables
 load_dotenv()
 
@@ -29,6 +34,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include route routers
+app.include_router(analyze_router, prefix="/api")
 
 
 @app.on_event("startup")
@@ -85,9 +93,37 @@ async def health_check():
     }
 
 
-# Example: Import and include routes
-# from app.routes import user_routes
-# app.include_router(user_routes.router)
+@app.get("/api/debug/models")
+async def list_available_models():
+    """
+    DEBUG ENDPOINT: List available Gemini models for your API key.
+    Use this to find the correct model name to use.
+    """
+    import google.generativeai as genai
+    
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return {"error": "GEMINI_API_KEY not configured"}
+    
+    try:
+        genai.configure(api_key=api_key)
+        models = genai.list_models()
+        
+        available_models = []
+        for m in models:
+            if 'generateContent' in m.supported_generation_methods:
+                available_models.append({
+                    "name": m.name,
+                    "display_name": m.display_name,
+                    "description": m.description if hasattr(m, 'description') else None
+                })
+        
+        return {
+            "total_models": len(available_models),
+            "available_for_generation": available_models
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 
 if __name__ == "__main__":
