@@ -17,6 +17,7 @@ from routes.auth_routes import router as auth_router
 from routes.policy_routes import router as policy_router
 from routes.analyze_routes import router as analyze_router
 from routes.simulate_routes import router as simulate_router
+from routes.battle_routes import router as battle_router
 
 # Load environment variables
 load_dotenv()
@@ -43,6 +44,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(policy_router, prefix="/api")
 app.include_router(analyze_router, prefix="/api")
 app.include_router(simulate_router, prefix="/api")
+app.include_router(battle_router, prefix="/api")
 
 
 @app.on_event("startup")
