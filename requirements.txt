@@ -4,3 +4,10 @@ python-multipart
 pymupdf
 google-generativeai
 python-dotenv
+sqlalchemy
+pydantic[email]
+psycopg2-binary
+alembic
+bcrypt
+python-jose[cryptography]
+passlib[bcrypt]

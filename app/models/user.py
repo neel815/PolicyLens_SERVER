@@ -4,6 +4,7 @@ Remove or modify based on your actual requirements.
 """
 
 from sqlalchemy import Column, String, Boolean, Text
+from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
 
@@ -18,6 +19,9 @@ class User(BaseModel):
     is_active = Column(Boolean, default=True, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
     bio = Column(Text, nullable=True)
+    
+    # Relationship to policies
+    policies = relationship("Policy", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"

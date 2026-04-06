@@ -13,7 +13,10 @@ from dotenv import load_dotenv
 # Import route routers
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from routes.auth_routes import router as auth_router
+from routes.policy_routes import router as policy_router
 from routes.analyze_routes import router as analyze_router
+from routes.simulate_routes import router as simulate_router
 
 # Load environment variables
 load_dotenv()
@@ -36,7 +39,10 @@ app.add_middleware(
 )
 
 # Include route routers
+app.include_router(auth_router, prefix="/api")
+app.include_router(policy_router, prefix="/api")
 app.include_router(analyze_router, prefix="/api")
+app.include_router(simulate_router, prefix="/api")
 
 
 @app.on_event("startup")

@@ -110,7 +110,7 @@ Document:
             analysis_prompt,
             generation_config={
                 "temperature": 1,
-                "max_output_tokens": 2000,
+                "max_output_tokens": 4000,
                 "response_mime_type": "application/json",
             }
         )
