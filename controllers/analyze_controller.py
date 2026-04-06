@@ -54,6 +54,9 @@ async def analyze_policy_controller(
             score_reason=result.get("score_reason", "")
         )
         
+        # Extract full AI response for analysis column
+        full_ai_response = result.get("_full_ai_response", None)
+        
         policy_create = PolicyCreate(
             file_name=file.filename,
             file_size=f"{len(pdf_bytes) / (1024 * 1024):.1f} MB",
@@ -61,15 +64,7 @@ async def analyze_policy_controller(
             analysis=analysis_data
         )
         
-        saved_policy = create_policy(user_id, policy_create, db)
-        
-        # Store full AI response in analysis column for flexibility
-        # This preserves complete AI output for future features (chat, debugging, etc)
-        full_ai_response = result.get("_full_ai_response", result)
-        saved_policy.analysis = full_ai_response
-        db.add(saved_policy)
-        db.commit()
-        db.refresh(saved_policy)
+        saved_policy = create_policy(user_id, policy_create, db, full_ai_response=full_ai_response)
         
         # Step 6: Return success response with policy ID (exclude internal fields)
         response_data = {

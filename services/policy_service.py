@@ -8,7 +8,7 @@ from app.schemas.policy import PolicyCreate, PolicyResponse, PolicyListResponse
 from fastapi import HTTPException
 
 
-def create_policy(user_id: int, policy_data: PolicyCreate, db: Session) -> PolicyResponse:
+def create_policy(user_id: int, policy_data: PolicyCreate, db: Session, full_ai_response: dict = None) -> PolicyResponse:
     """
     Create and save a new policy analysis to the database.
     
@@ -16,6 +16,7 @@ def create_policy(user_id: int, policy_data: PolicyCreate, db: Session) -> Polic
         user_id: ID of the user who owns this policy
         policy_data: Policy analysis data to save
         db: Database session
+        full_ai_response: Optional full AI response to store in analysis column
         
     Returns:
         Created policy with ID
@@ -31,6 +32,7 @@ def create_policy(user_id: int, policy_data: PolicyCreate, db: Session) -> Polic
             risky_clauses=policy_data.analysis.risky_clauses,
             coverage_score=policy_data.analysis.coverage_score,
             score_reason=policy_data.analysis.score_reason,
+            analysis=full_ai_response,  # Store full AI response for future features
         )
         
         db.add(new_policy)
