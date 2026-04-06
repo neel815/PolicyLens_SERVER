@@ -178,8 +178,8 @@ Document:
         )
     result["coverage_score"] = score
     
-    # STEP H: Return clean result for frontend
-    return {
+    # STEP H: Return clean result for frontend + full AI response
+    clean_result = {
         "covered_events": result["covered_events"],
         "exclusions": result["exclusions"],
         "risky_clauses": result["risky_clauses"],
@@ -187,3 +187,8 @@ Document:
         "policy_type": result.get("policy_type", "Insurance"),
         "score_reason": result.get("score_reason", "")
     }
+    
+    # Store complete AI response for future features (chat, debugging, etc)
+    clean_result["_full_ai_response"] = result
+    
+    return clean_result

@@ -63,13 +63,24 @@ async def analyze_policy_controller(
         
         saved_policy = create_policy(user_id, policy_create, db)
         
-        # Step 6: Return success response with policy ID
+        # Store full AI response in analysis column for flexibility
+        # This preserves complete AI output for future features (chat, debugging, etc)
+        full_ai_response = result.get("_full_ai_response", result)
+        saved_policy.analysis = full_ai_response
+        db.add(saved_policy)
+        db.commit()
+        db.refresh(saved_policy)
+        
+        # Step 6: Return success response with policy ID (exclude internal fields)
+        response_data = {
+            k: v for k, v in result.items() 
+            if not k.startswith("_")
+        }
+        response_data["policy_id"] = saved_policy.id
+        
         return {
             "success": True,
-            "data": {
-                **result,
-                "policy_id": saved_policy.id
-            }
+            "data": response_data
         }
     
     except HTTPException:

@@ -23,6 +23,9 @@ class Policy(BaseModel):
     coverage_score = Column(Integer, nullable=False)
     score_reason = Column(String(500), nullable=True)
     
+    # Full AI response (flexible JSONB for future features)
+    analysis = Column(JSON, nullable=True)
+    
     # Relationship to User
     user = relationship("User", back_populates="policies")
 
