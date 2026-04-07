@@ -157,7 +157,6 @@ Rules:
             generation_config={
                 "temperature": 1,
                 "max_output_tokens": 8192,
-                "response_mime_type": "application/json",
             }
         )
     except Exception as e:
@@ -172,41 +171,64 @@ Rules:
     
     raw_response = response.text.strip()
     
-    # Handle markdown code blocks that Gemini sometimes returns
+    # Remove markdown code blocks
     if raw_response.startswith("```json"):
-        raw_response = raw_response[7:]  # Remove ```json
-    if raw_response.startswith("```"):
-        raw_response = raw_response[3:]  # Remove ```
+        raw_response = raw_response[7:]
+    elif raw_response.startswith("```"):
+        raw_response = raw_response[3:]
+    
     if raw_response.endswith("```"):
-        raw_response = raw_response[:-3]  # Remove closing ```
+        raw_response = raw_response[:-3]
     
     raw_response = raw_response.strip()
     
-    # Check if response looks incomplete (common Gemini issue)
-    if not raw_response.endswith("}"):
-        # Try to find the last complete closing brace
-        last_brace = raw_response.rfind("}")
-        if last_brace == -1:
-            print(f"❌ Incomplete JSON response (no closing brace): {raw_response[:200]}")
-            raise HTTPException(
-                status_code=500,
-                detail="AI response was incomplete. Please try the battle again."
-            )
-        # Truncate to last complete object
-        raw_response = raw_response[:last_brace + 1]
+    # Extract JSON from response (handles extra text before/after)
+    json_start = raw_response.find("{")
+    json_end = raw_response.rfind("}")
     
-    # Debug: print raw response
-    print(f"✓ Raw Gemini response parsed successfully ({len(raw_response)} chars)")
+    if json_start == -1 or json_end == -1:
+        print(f"❌ No JSON object found in response: {raw_response[:200]}")
+        raise HTTPException(
+            status_code=500,
+            detail="AI response did not contain valid JSON. Please try again."
+        )
+    
+    # Extract just the JSON portion
+    raw_response = raw_response[json_start:json_end + 1]
+    
+    # Clean up common JSON issues
+    # Fix escaped newlines in strings by replacing with spaces
+    raw_response = raw_response.replace('\\n', ' ')
+    raw_response = raw_response.replace('\n', ' ')
+    
+    # Remove any null bytes or other problematic characters
+    raw_response = raw_response.replace('\x00', '')
+    
+    # Fix common quote issues (straight quotes for valid JSON)
+    raw_response = raw_response.replace('"', '"').replace('"', '"')  # smartquotes to straight
+    raw_response = raw_response.replace(''', "'").replace(''', "'")  # smartsingle to straight
+    
+    print(f"✓ Raw Gemini response extracted ({len(raw_response)} chars)")
     
     try:
         result = json.loads(raw_response)
     except json.JSONDecodeError as e:
         print(f"❌ JSON Parse Error: {str(e)}")
-        print(f"Failed at: {raw_response[max(0, e.pos-50):e.pos+50]}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"AI response was not valid JSON: {str(e)[:100]}"
-        )
+        print(f"Failed near position {e.pos}: {raw_response[max(0, e.pos-50):e.pos+100]}")
+        
+        # Try to fix common issues
+        try:
+            # Try to fix unescaped quotes in strings
+            import re
+            # This is a last-resort attempt to fix the JSON
+            fixed = re.sub(r'(?<=[a-zA-Z0-9])"(?=[a-zA-Z0-9])', '\\"', raw_response)
+            result = json.loads(fixed)
+            print("✓ Fixed JSON after quote escaping")
+        except:
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI response was not valid JSON: {str(e)[:80]}"
+            )
     
     # STEP F: Validate result
     required = [
