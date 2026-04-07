@@ -1,9 +1,9 @@
-"""Service for policy analysis using Google Gemini"""
+"""Service for policy analysis using Groq API"""
 
 import os
 import json
 from pathlib import Path
-import google.generativeai as genai
+from groq import Groq
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from utils.pdf_utils import extract_text_from_pdf
@@ -40,12 +40,10 @@ def analyze_policy_service(pdf_bytes: bytes) -> dict:
     
     policy_text = text[:8000]
     
-    # STEP B: Setup Gemini client
-    api_key = os.getenv("GEMINI_API_KEY")
+    # STEP B: Setup Groq client
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="Gemini API key not configured.")
-    
-    genai.configure(api_key=api_key)
+        raise HTTPException(status_code=500, detail="Groq API key not configured.")
     
     # STEP C: Build smart universal prompt (one call: validate + analyze)
     analysis_prompt = f"""You are an expert insurance analyst.
@@ -103,16 +101,24 @@ Rules:
 Document:
 {policy_text}"""
     
-    # STEP D: Call Gemini API
+    # STEP D: Call Groq API
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        response = model.generate_content(
-            analysis_prompt,
-            generation_config={
-                "temperature": 1,
-                "max_output_tokens": 4000,
-                "response_mime_type": "application/json",
-            }
+        client = Groq(api_key=api_key)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert insurance analyst. Always respond with valid JSON only."
+                },
+                {
+                    "role": "user",
+                    "content": analysis_prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=4000,
+            response_format={"type": "json_object"}
         )
     except Exception as e:
         raise HTTPException(
@@ -121,14 +127,15 @@ Document:
         )
     
     # STEP E: Parse response
-    if not response or not hasattr(response, 'text') or not response.text:
+    if not response or not response.choices or len(response.choices) == 0:
         raise HTTPException(
             status_code=500,
             detail="AI returned empty response. Please try again."
         )
     
     try:
-        result = json.loads(response.text.strip())
+        content = response.choices[0].message.content
+        result = json.loads(content.strip())
     except json.JSONDecodeError as e:
         print(f"JSON parse error: {e}")
         print(f"Raw response (first 300 chars): {repr(response.text[:300])}")

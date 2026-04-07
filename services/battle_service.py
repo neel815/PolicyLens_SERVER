@@ -1,9 +1,9 @@
-"""Service for policy battle using Google Gemini"""
+"""Service for policy battle using Groq API"""
 
 import os
 import json
 from pathlib import Path
-import google.generativeai as genai
+from groq import Groq
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
@@ -52,12 +52,10 @@ def battle_service(
         HTTPException: If Gemini API call fails or response is invalid
     """
     
-    # STEP A: Setup Gemini
-    api_key = os.getenv("GEMINI_API_KEY")
+    # STEP A: Setup Groq
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="Gemini API key not configured.")
-    
-    genai.configure(api_key=api_key)
+        raise HTTPException(status_code=500, detail="Groq API key not configured.")
     
     # STEP B: Build summaries
     summary1 = build_summary(analysis1, name1)
@@ -149,15 +147,24 @@ Rules:
 - Be specific — mention actual policy details in reasoning
 - Return ONLY the JSON object with no markdown, no code blocks, no explanation"""
     
-    # STEP D: Call Gemini
+    # STEP D: Call Groq
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        response = model.generate_content(
-            prompt,
-            generation_config={
-                "temperature": 1,
-                "max_output_tokens": 8192,
-            }
+        client = Groq(api_key=api_key)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a strict insurance policy judge. Always respond with valid JSON only."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=8192,
+            response_format={"type": "json_object"}
         )
     except Exception as e:
         raise HTTPException(
@@ -166,10 +173,10 @@ Rules:
         )
     
     # STEP E: Parse response
-    if not response or not hasattr(response, 'text') or not response.text:
+    if not response or not response.choices or len(response.choices) == 0:
         raise HTTPException(status_code=500, detail="AI returned empty response.")
     
-    raw_response = response.text.strip()
+    raw_response = response.choices[0].message.content.strip()
     
     # Remove markdown code blocks
     if raw_response.startswith("```json"):
@@ -208,7 +215,7 @@ Rules:
     raw_response = raw_response.replace('"', '"').replace('"', '"')  # smartquotes to straight
     raw_response = raw_response.replace(''', "'").replace(''', "'")  # smartsingle to straight
     
-    print(f"✓ Raw Gemini response extracted ({len(raw_response)} chars)")
+    print(f"✓ Raw Groq response extracted ({len(raw_response)} chars)")
     
     try:
         result = json.loads(raw_response)

@@ -1,9 +1,9 @@
-"""Service for claim simulation using Google Gemini"""
+"""Service for claim simulation using Groq API"""
 
 import os
 import json
 from pathlib import Path
-import google.generativeai as genai
+from groq import Groq
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
@@ -29,12 +29,10 @@ def simulate_claim_service(scenario: str, analysis: dict) -> dict:
     Raises:
         HTTPException: If simulation fails or AI analysis cannot be performed
     """
-    # STEP A: Setup Gemini
-    api_key = os.getenv("GEMINI_API_KEY")
+    # STEP A: Setup Groq
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="Gemini API key not configured.")
-    
-    genai.configure(api_key=api_key)
+        raise HTTPException(status_code=500, detail="Groq API key not configured.")
     
     # STEP B: Build analysis summary string
     policy_type = analysis.get("policy_type", "Insurance")
@@ -97,16 +95,24 @@ Rules:
 - reasoning: plain English, no jargon, max 3 sentences
 - Return ONLY raw JSON"""
     
-    # STEP D: Call Gemini API
+    # STEP D: Call Groq API
     try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        response = model.generate_content(
-            prompt,
-            generation_config={
-                "temperature": 1,
-                "max_output_tokens": 4096,
-                "response_mime_type": "application/json",
-            }
+        client = Groq(api_key=api_key)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a strict insurance claim evaluator. Always respond with valid JSON only."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.7,
+            max_tokens=4096,
+            response_format={"type": "json_object"}
         )
     except Exception as e:
         raise HTTPException(
@@ -115,11 +121,11 @@ Rules:
         )
     
     # STEP E: Parse response
-    if not response or not hasattr(response, 'text') or not response.text:
+    if not response or not response.choices or len(response.choices) == 0:
         raise HTTPException(status_code=500, detail="AI returned empty response.")
     
-    raw_text = response.text.strip()
-    print(f"Raw Gemini response (first 500 chars): {repr(raw_text[:500])}")
+    raw_text = response.choices[0].message.content.strip()
+    print(f"Raw Groq response (first 500 chars): {repr(raw_text[:500])}")
     
     try:
         # Try direct JSON parse first

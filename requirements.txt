@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 python-multipart
 pymupdf
-google-generativeai
+groq
 python-dotenv
 sqlalchemy
 pydantic[email]
