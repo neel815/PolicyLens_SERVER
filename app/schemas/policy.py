@@ -36,6 +36,7 @@ class PolicyResponse(BaseModel):
     risky_clauses: List[str]
     coverage_score: int
     score_reason: Optional[str]
+    analysis: Optional[dict] = None
     created_at: datetime
     updated_at: datetime
 

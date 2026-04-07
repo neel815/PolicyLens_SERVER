@@ -28,6 +28,8 @@ class Policy(BaseModel):
     
     # Relationship to User
     user = relationship("User", back_populates="policies")
+    # Relationship to ClaimSimulations
+    simulations = relationship("ClaimSimulation", back_populates="policy", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Policy(id={self.id}, user_id={self.user_id}, policy_type='{self.policy_type}')>"

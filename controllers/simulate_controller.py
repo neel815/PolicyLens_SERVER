@@ -1,8 +1,15 @@
 from fastapi import HTTPException
 from services.simulate_service import simulate_claim_service
+from services.claim_simulation_service import create_claim_simulation
+from sqlalchemy.orm import Session
 
 
-async def simulate_claim_controller(scenario: str, analysis: dict) -> dict:
+async def simulate_claim_controller(
+    scenario: str, 
+    analysis: dict,
+    policy_id: int | None = None,
+    db: Session | None = None
+) -> dict:
     """
     Controller for claim simulation.
     Validates input and delegates to service layer.
@@ -21,6 +28,21 @@ async def simulate_claim_controller(scenario: str, analysis: dict) -> dict:
     
     try:
         result = simulate_claim_service(scenario.strip(), analysis)
+        
+        # Save simulation to database if policy_id and db are provided
+        if policy_id and db:
+            try:
+                create_claim_simulation(
+                    db=db,
+                    policy_id=policy_id,
+                    scenario=scenario.strip(),
+                    coverage_result=result.get("verdict") in ["Likely Approved", "Partial Coverage"],
+                    explanation=result.get("explanation", "")
+                )
+            except Exception as e:
+                # Log error but don't fail the simulation due to storage issues
+                print(f"Failed to save simulation: {str(e)}")
+        
         return {"success": True, "data": result}
     except HTTPException:
         raise
