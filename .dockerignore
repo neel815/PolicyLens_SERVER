@@ -1,0 +1,74 @@
+# Docker/Railway Build Ignore File
+# Prevents unnecessary files from being included in the build
+
+# Version control
+.git/
+.gitignore
+.github/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files (security)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Development/Testing (remove if you want tests in production)
+tests/
+pytest.ini
+test_*.py
+*.test.py
+
+# Documentation
+*.md
+docs/
+
+# Logs (will be generated in production)
+logs/
+*.log
+
+# Database backups
+*.sql
+*.dump
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+Thumbs.db
+
+# Node (if any)
+node_modules/
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Misc
+.dockerignore
+Dockerfile
+docker-compose.yml

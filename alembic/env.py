@@ -1,6 +1,7 @@
 from __future__ import with_statement
 import os
 import sys
+import logging
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -28,6 +29,11 @@ fileConfig(config.config_file_name)
 database_url = os.getenv("DATABASE_URL")
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
+else:
+    # If DATABASE_URL is not set, use a placeholder for offline mode
+    logger = logging.getLogger("alembic.env")
+    logger.warning("DATABASE_URL not set. Migrations will be skipped.")
+    config.set_main_option("sqlalchemy.url", "postgresql://user:pass@localhost/db")
 
 # Import your models' MetaData object here
 # for 'autogenerate' support

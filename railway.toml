@@ -11,7 +11,7 @@ restartPolicyMaxRetries = 5
 
 [[services]]
 name = "web"
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+startCommand = "python start.py"
 
 # Health check configuration
 [[services.healthchecks]]
