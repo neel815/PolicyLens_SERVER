@@ -2,6 +2,7 @@
 Authentication routes for user registration and login.
 """
 
+import os
 from fastapi import APIRouter, HTTPException, status, Request, Response
 from sqlalchemy.orm import Session
 from app.db.database import get_db
@@ -94,11 +95,14 @@ async def register(
         status_code=201,
         media_type="application/json"
     )
+    # Set secure flag only in production (HTTPS)
+    is_production = os.getenv("ENV", "development").lower() == "production"
+    
     response_obj.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,           # Prevents JavaScript access (XSS protection)
-        secure=True,             # HTTPS only in production
+        secure=is_production,    # HTTPS only in production, HTTP OK in dev
         samesite="strict",       # CSRF protection
         max_age=86400,           # 24 hours
         path="/"
@@ -158,11 +162,14 @@ async def login(
         status_code=200,
         media_type="application/json"
     )
+    # Set secure flag only in production (HTTPS)
+    is_production = os.getenv("ENV", "development").lower() == "production"
+    
     response_obj.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,           # Prevents JavaScript access (XSS protection)
-        secure=True,             # HTTPS only in production
+        secure=is_production,    # HTTPS only in production, HTTP OK in dev
         samesite="strict",       # CSRF protection
         max_age=86400,           # 24 hours
         path="/"

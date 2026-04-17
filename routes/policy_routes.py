@@ -18,9 +18,9 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit("20/minute")
 @router.get("", response_model=list[PolicyListResponse])
 async def list_policies(
+    request: Request,
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
-    request: Request = None,
     limit: int = 50,
     skip: int = 0
 ):
@@ -42,10 +42,10 @@ async def list_policies(
 @limiter.limit("30/minute")
 @router.get("/{policy_id}", response_model=PolicyResponse)
 async def get_policy(
+    request: Request,
     policy_id: int,
     user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-    request: Request = None
+    db: Session = Depends(get_db)
 ):
     """
     Get a specific policy by ID.
@@ -67,10 +67,10 @@ async def get_policy(
 @limiter.limit("5/minute")
 @router.delete("/{policy_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_policy_route(
+    request: Request,
     policy_id: int,
     user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-    request: Request = None
+    db: Session = Depends(get_db)
 ):
     """
     Delete a policy.

@@ -17,13 +17,13 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit("10/minute")
 @router.post("/battle")
 async def battle_policies(
+    request: Request,
     file1: UploadFile = File(None),
     file2: UploadFile = File(None),
     policy1_id: int = Form(None),
     policy2_id: int = Form(None),
     user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-    request: Request = None
+    db: Session = Depends(get_db)
 ):
     """
     Battle two insurance policies against each other.

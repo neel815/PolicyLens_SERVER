@@ -4,10 +4,14 @@ JWT token utilities for authentication.
 
 import os
 import bcrypt
+import logging
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer
+
+# Setup logging
+logger = logging.getLogger(__name__)
 
 # Security settings
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -54,34 +58,66 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return encoded_jwt
 
 
-async def get_current_user_id(credentials = Depends(security)) -> int:
+async def get_current_user_id(request: Request) -> int:
     """
     Dependency to extract and validate JWT token, returning user_id.
+    Supports both HttpOnly cookies and Authorization header.
+    
+    Priority:
+    1. Check for token in 'access_token' HttpOnly cookie
+    2. Fall back to Authorization: Bearer <token> header
     
     Args:
-        credentials: HTTP Bearer token from Authorization header
+        request: FastAPI request object to access cookies and headers
         
     Returns:
         user_id from token claims
         
     Raises:
-        HTTPException: If token is invalid or expired
+        HTTPException: If token is invalid, expired, or missing
     """
-    token = credentials.credentials
+    token = None
+    
+    # Try to get token from HttpOnly cookie first
+    token = request.cookies.get("access_token")
+    if token:
+        logger.debug(f"[AUTH] Token found in HttpOnly cookie")
+    else:
+        logger.debug(f"[AUTH] No token in HttpOnly cookie. Available cookies: {list(request.cookies.keys())}")
+    
+    # Fall back to Authorization header if no cookie
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:]  # Remove "Bearer " prefix
+            logger.debug(f"[AUTH] Token found in Authorization header")
+        else:
+            logger.debug(f"[AUTH] No Authorization header found")
+    
+    if not token:
+        logger.warning(f"[AUTH] Authentication failed: No token found in request")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated. Please log in.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
+            logger.warning(f"[AUTH] Token missing user ID claim")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token",
+                detail="Invalid token claims",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        logger.debug(f"[AUTH] User {user_id} authenticated successfully")
         return int(user_id)
-    except JWTError:
+    except JWTError as e:
+        logger.warning(f"[AUTH] JWT validation failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
+            detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )

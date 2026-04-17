@@ -17,10 +17,10 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit("5/minute")
 @router.post("/analyze")
 async def analyze_policy(
+    request: Request,
     file: UploadFile = File(...),
     user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-    request: Request = None
+    db: Session = Depends(get_db)
 ):
     """
     Analyze an insurance policy PDF.
