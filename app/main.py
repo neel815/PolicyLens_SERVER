@@ -71,6 +71,10 @@ logger.addHandler(error_handler)
 # ============================================================================
 def validate_environment():
     """Validate all required environment variables are set and secure."""
+    env = os.getenv("ENV", "development")
+    
+    # In development/startup mode, allow missing variables
+    # They will be needed for authentication and database operations
     required_vars = [
         "SECRET_KEY",
         "DATABASE_URL",
@@ -79,17 +83,27 @@ def validate_environment():
     
     missing = [var for var in required_vars if not os.getenv(var)]
     
-    if missing:
+    # Only enforce required variables in production
+    if missing and env == "production":
+        logger.error(
+            f"❌ Missing required environment variables in production: {', '.join(missing)}\n"
+            f"Please add them to your Railway Variables tab"
+        )
         raise RuntimeError(
             f"Missing required environment variables: {', '.join(missing)}\n"
             f"Please add them to your .env file"
         )
     
-    # Validate SECRET_KEY
-    secret_key = os.getenv("SECRET_KEY", "")
-    env = os.getenv("ENV", "development")
+    # In development, warn about missing variables but allow startup
+    if missing:
+        logger.warning(
+            f"⚠️  Missing environment variables (development mode): {', '.join(missing)}\n"
+            f"These are required for production. Set them in Railway Variables tab."
+        )
     
-    if len(secret_key) < 32:
+    # Validate SECRET_KEY length only in production
+    secret_key = os.getenv("SECRET_KEY", "")
+    if secret_key and len(secret_key) < 32:
         if env == "production":
             raise RuntimeError(
                 f"SECRET_KEY is too short ({len(secret_key)} chars). "
@@ -115,19 +129,19 @@ def validate_environment():
                 "Use only production domains."
             )
     
-    # Validate DATABASE_URL format
+    # Validate DATABASE_URL format only if set
     db_url = os.getenv("DATABASE_URL", "")
-    if not db_url.startswith("postgresql://"):
+    if db_url and not db_url.startswith("postgresql://"):
         logger.warning("DATABASE_URL does not use PostgreSQL. Ensure database is PostgreSQL.")
     
     # Warn if using default credentials
-    if "postgres:root@123" in db_url or "root@123" in db_url:
+    if db_url and ("postgres:root@123" in db_url or "root@123" in db_url):
         logger.warning(
             "WARNING: Using default database credentials. "
             "Change DB_PASSWORD to a strong password in production."
         )
     
-    logger.info("Environment variables validated successfully")
+    logger.info("✅ Environment validation complete (development mode allows optional variables)")
 
 
 validate_environment()
