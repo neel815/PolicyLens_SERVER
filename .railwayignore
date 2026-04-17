@@ -1,0 +1,65 @@
+# .railwayignore
+# Files/directories to ignore during Railway deployment
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment files (don't deploy local .env)
+.env
+.env.local
+.env.*.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test files (optional - remove if you want tests in production)
+tests/
+pytest.ini
+test_*.py
+
+# Documentation (optional)
+*.md
+docs/
+
+# Git files
+.git/
+.gitignore
+.github/
+
+# Logs (will be generated in production)
+logs/
+*.log
+
+# Database backups
+*.sql
+*.dump
+
+# Node modules (if any)
+node_modules/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db

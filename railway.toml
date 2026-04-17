@@ -1,0 +1,28 @@
+# Railway TOML Configuration
+# See https://railway.app/docs for more options
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+
+[[services]]
+name = "web"
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+
+# Health check configuration
+[[services.healthchecks]]
+path = "/docs"
+port = "$PORT"
+protocol = "HTTP"
+initialDelaySeconds = 30
+periodSeconds = 10
+timeoutSeconds = 5
+failureThreshold = 3
+
+[[services.ports]]
+port = "$PORT"
+name = "web"
