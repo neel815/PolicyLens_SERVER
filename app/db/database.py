@@ -98,3 +98,13 @@ def check_db_connection():
     except Exception as e:
         print(f"Database connection failed: {e}")
         return False
+
+
+# Import all models AFTER Base is created to register them
+# Avoid circular imports by importing at the end
+from app.models.base import BaseModel
+from app.models.user import User
+from app.models.policy import Policy
+from app.models.claim_simulation import ClaimSimulation
+
+__all__ = ["Base", "engine", "SessionLocal", "get_db", "get_db_context", "init_db", "drop_db", "check_db_connection"]

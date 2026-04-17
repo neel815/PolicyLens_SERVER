@@ -9,10 +9,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import check_db_connection
 from dotenv import load_dotenv
+import sys
+
+# Add backend directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import route routers
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from routes.auth_routes import router as auth_router
 from routes.policy_routes import router as policy_router
 from routes.analyze_routes import router as analyze_router
@@ -50,11 +52,11 @@ app.include_router(battle_router, prefix="/api")
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and run Alembic migrations on startup."""
-    print("🚀 Starting PolicyLens API...")
+    print("[STARTUP] Starting PolicyLens API...")
     
     # Check database connection
     if check_db_connection():
-        print("✅ Database connection successful!")
+        print("[STARTUP] Database connection successful!")
         # Run Alembic migrations
         try:
             result = subprocess.run(
@@ -65,20 +67,20 @@ async def startup_event():
                 timeout=30
             )
             if result.returncode == 0:
-                print("✅ Database migrations applied successfully!")
+                print("[STARTUP] Database migrations applied successfully!")
             else:
-                print(f"⚠️  Migration warning: {result.stderr}")
+                print(f"[STARTUP WARNING] Migration warning: {result.stderr}")
         except Exception as e:
-            print(f"⚠️  Could not run migrations: {e}")
+            print(f"[STARTUP WARNING] Could not run migrations: {e}")
             print("    Make sure to run 'alembic upgrade head' manually")
     else:
-        print("❌ Database connection failed!")
+        print("[STARTUP ERROR] Database connection failed!")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown."""
-    print("🛑 PolicyLens API shutting down...")
+    print("[SHUTDOWN] PolicyLens API shutting down...")
 
 
 @app.get("/")
