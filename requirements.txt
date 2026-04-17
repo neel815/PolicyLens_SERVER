@@ -11,3 +11,10 @@ alembic
 bcrypt
 python-jose[cryptography]
 passlib[bcrypt]
+slowapi
+PyPDF2
+google-generativeai
+pytest
+pytest-asyncio
+httpx
+

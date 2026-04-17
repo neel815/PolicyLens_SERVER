@@ -46,8 +46,7 @@ async def battle_controller(
         name1 = None
         
         if file1 and file1.filename:
-            await validate_pdf_upload(file1)
-            bytes1 = await file1.read()
+            bytes1 = await validate_pdf_upload(file1)  # ✅ Returns bytes directly
             analysis1 = analyze_policy_service(bytes1)
             name1 = file1.filename
         elif policy1_id:
@@ -69,8 +68,7 @@ async def battle_controller(
         name2 = None
         
         if file2 and file2.filename:
-            await validate_pdf_upload(file2)
-            bytes2 = await file2.read()
+            bytes2 = await validate_pdf_upload(file2)  # ✅ Returns bytes directly
             analysis2 = analyze_policy_service(bytes2)
             name2 = file2.filename
         elif policy2_id:

@@ -1,18 +1,21 @@
 from fastapi import HTTPException
 from services.simulate_service import simulate_claim_service
 from services.claim_simulation_service import create_claim_simulation
+from services.policy_service import get_policy_by_id
 from sqlalchemy.orm import Session
 
 
 async def simulate_claim_controller(
     scenario: str, 
     analysis: dict,
+    user_id: int,
     policy_id: int | None = None,
     db: Session | None = None
 ) -> dict:
     """
     Controller for claim simulation.
     Validates input and delegates to service layer.
+    Ensures user owns the policy if policy_id is provided.
     """
     if not scenario or not scenario.strip():
         raise HTTPException(status_code=400, detail="Scenario cannot be empty.")
@@ -25,6 +28,13 @@ async def simulate_claim_controller(
     
     if not analysis:
         raise HTTPException(status_code=400, detail="Policy analysis data is required.")
+    
+    # Verify user owns the policy if policy_id is provided
+    if policy_id and db:
+        try:
+            get_policy_by_id(policy_id, user_id, db)  # This checks ownership
+        except HTTPException as e:
+            raise HTTPException(status_code=403, detail="Access denied: You do not own this policy.")
     
     try:
         result = simulate_claim_service(scenario.strip(), analysis)

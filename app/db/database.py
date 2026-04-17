@@ -16,13 +16,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database configuration
+# IMPORTANT: Change default password in production!
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:root%40123@127.0.0.1:5432/policylens"
+    "postgresql://postgres:change_me_in_production@127.0.0.1:5432/policylens"
 )
 
-DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", 5))
-DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", 10))
+# Database pool configuration - optimized for production
+# Development: 5/10, Staging: 15/30, Production: 20/40
+DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", 20))
+DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", 40))
 DB_POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", 30))
 DB_POOL_RECYCLE = int(os.getenv("DB_POOL_RECYCLE", 3600))
 

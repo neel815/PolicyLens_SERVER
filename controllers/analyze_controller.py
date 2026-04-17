@@ -33,11 +33,8 @@ async def analyze_policy_controller(
         HTTPException: If validation or analysis fails
     """
     try:
-        # Step 1: Validate file
-        await validate_pdf_upload(file)
-        
-        # Step 2: Read file bytes
-        pdf_bytes = await file.read()
+        # Step 1: Validate file (returns PDF bytes if valid)
+        pdf_bytes = await validate_pdf_upload(file)
         
         # Step 3: Reset file pointer
         await file.seek(0)

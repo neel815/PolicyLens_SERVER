@@ -2,23 +2,30 @@
 Routes for policy analysis endpoints
 """
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Request
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.utils.jwt_utils import get_current_user_id
 from controllers.analyze_controller import analyze_policy_controller
+from slowapi.util import get_remote_address
+from slowapi import Limiter
 
 router = APIRouter(tags=["analysis"])
+limiter = Limiter(key_func=get_remote_address)
 
 
+@limiter.limit("5/minute")
 @router.post("/analyze")
 async def analyze_policy(
     file: UploadFile = File(...),
     user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    request: Request = None
 ):
     """
     Analyze an insurance policy PDF.
+    
+    Rate Limited: 5 requests per minute per IP address.
     
     Args:
         file: PDF file to analyze
