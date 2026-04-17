@@ -59,7 +59,7 @@ async def analyze_policy_controller(
         
         policy_create = PolicyCreate(
             file_name=file.filename,
-            file_size=f"{len(pdf_bytes) / (1024 * 1024):.1f} MB",
+            file_size=f"{len(pdf_bytes) / (1024 * 1024):.3f} MB",
             policy_type=result.get("policy_type", "Insurance"),
             analysis=analysis_data
         )
